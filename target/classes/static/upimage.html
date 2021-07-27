@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div id="app" style="width: 30%;height: auto;text-align:center;margin: auto;">
+  <el-empty description="直接粘贴截图上传，支持QQ,微信截图" style="box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)">
+    <el-upload action="" :file-list="fileList" :on-change="fileChange"><el-button>选择图片上传</el-button></el-upload>
+  </el-empty>
+  <el-input v-model="imageUrl" readonly></el-input>
+  <el-button @click="reset">清空</el-button>
+  <el-button @click="copy(0)">复制Markdown格式</el-button>
+  <el-button @click="copy(1)">复制普通格式</el-button>
+</div>
+</body>
+<script>
+  let app = new Vue({
+    el: '#app',
+    data() {
+      return {
+        fileList:[],
+        imageUrl:"",
+        baseUrl:"http://localhost:6111/ossService/file/upload",
+        isChange:true
+      }
+    },
+    mounted() {
+      // 监听粘贴事件，上传图片
+      document.addEventListener('paste', this.handlePaste)
+    },
+    methods: {
+      handlePaste(event) {
+        let items = event.clipboardData && event.clipboardData.items
+        let file
+        if (items && items.length) {
+          // 检索剪切板items，是个数组
+          for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+              file = items[i].getAsFile() // file 是剪切板内的图片文件
+              //粘贴上传
+              this.fileList = []
+              this.fileList.push(file)
+              let formData = new FormData() // 创建 formdata对象
+              formData.append('imageFile', file)
+              formData.append('mimeType', false)
+              this.uploadFile(formData)
+              break
+            }else {
+              this.$message.error('请粘贴图片')
+              break
+            }
+          }
+        }
+      },
+      //粘贴或重新粘贴选择文件时触发的方法
+      fileChange(file, fileList) {
+        if (fileList.length > 0) {
+          this.fileList = [fileList[fileList.length - 1]]
+        }
+        if (this.isChange){
+          let formData = new FormData() // 创建 formdata对象
+          formData.append('imageFile', this.fileList[0].raw)
+          formData.append('mimeType', false)
+          this.uploadFile(formData)
+          this.isChange = false
+        }else {
+          this.isChange = true
+        }
+      },
+      //上传文件方法
+      uploadFile(formData) {
+        axios({
+          url:this.baseUrl,
+          method:'post',
+          data:formData
+        }).then(response => {
+          console.log(response)
+          this.imageUrl = response.data.url
+          this.$message.success('上传转换成功')
+        },error => {
+          console.log(error)
+          this.$message.error('上传转换失败，请重新尝试')
+        })
+      },
+      //重置清空
+      reset(){
+        this.fileList = []
+        this.imageUrl = ""
+      },
+      copy(num){
+        //复制地址的操作
+        // js创建一个input输入框
+        var input = document.createElement("input");
+
+        // 将需要复制的文本赋值到创建的input输入框中，this.ruleForm.url这个是我要复制的内容
+        if(num === 0){
+          input.value = "![image]"+"("+this.imageUrl+")"
+        }else {
+          input.value = this.imageUrl
+        }
+
+        // 将输入框暂时创建到实例里面
+        document.body.appendChild(input);
+
+        // 选中输入框中的内容
+        input.select();
+
+        // 执行复制操作
+        document.execCommand("Copy");
+
+        // 最后删除实例中临时创建的input输入框，完成复制操作
+        document.body.removeChild(input);
+        this.$message.success('复制成功')
+      }
+    }
+  })
+</script>
+</html>
