@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多组文字滑动切换</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: white;
+            color: black;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        .active {
+            display: flex;
+            opacity: 1;
+        }
+        .button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 3vw;
+            cursor: pointer;
+            z-index: 10;
+            border-radius: 50%;
+        }
+        .button:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .prev {
+            left: 10px;
+        }
+        .next {
+            right: 10px;
+        }
+        .group-prev, .group-next {
+            position: absolute;
+            top: 90%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 3vw;
+            cursor: pointer;
+            z-index: 10;
+            border-radius: 50%;
+        }
+        .group-prev {
+            left: 10px;
+        }
+        .group-next {
+            right: 10px;
+        }
+        .group-prev:hover, .group-next:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        .group-indicator {
+            position: absolute;
+            top: 5%;
+            font-size: 4vw;
+            color: rgba(0, 0, 0, 0.7);
+            font-weight: bold;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 左右切换按钮 -->
+<button class="button prev">←</button>
+<button class="button next">→</button>
+
+<!-- 左右切换组别按钮 -->
+<button class="group-prev">《</button>
+<button class="group-next">》</button>
+
+<!-- 显示组别序号 -->
+<div class="group-indicator">组别 1</div>
+
+<script>
+    // 多组文字数组
+    const textGroups = [
+        [
+          "冬瓜", "钓鱼", "走马观花", "苹果", "手电筒", "蹑手蹑脚", "大头鱼", "烘干机", "击剑", "洛阳纸贵",
+          "天涯海角", "巧舌如簧", "挤眉弄眼", "精忠报国", "宁缺毋滥", "纸杯", "丸子", "菜刀", "亡羊补牢", "钻戒",
+          "刘翔", "逍遥法外", "名副其实", "万箭穿心", "晴天霹雳", "泥牛下海", "作茧自缚", "鲜花", "和尚", "轮椅",
+          "乒乓球", "雨鞋", "开膛破肚", "鸭子", "外星人", "铁锤", "花露水", "段誉", "蝙蝠", "尿布",
+          "狗急跳墙", "坐井观天", "黄鹂", "蝉", "刺猬", "蓝鲸", "梅子", "红毛丹", "土豆", "懒羊羊",
+          "金针菇", "炸酱面", "人怕出名猪怕壮", "糯米饭", "口红", "目瞪口呆", "消毒", "纽扣", "小偷", "大米",
+          "杯子", "刘备", "闯红灯", "棒棒糖", "企鹅", "流口水", "愁眉苦脸", "跨", "面条", "武术",
+          "五湖四海", "抱头鼠窜", "恶作剧", "替罪羊", "猴年马月", "油", "地球仪", "衣柜", "太阳", "尼姑",
+          "手舞足蹈", "跳绳", "指手划脚", "芋头", "蜘蛛", "海马", "拳击", "瑜伽", "鹦鹉", "吊兰",
+          "不及格", "扬州炒饭", "絮絮叨叨", "耳目一新", "如鱼得水", "酸粉", "迟到", "恍然大悟"
+        ],
+        [
+          "落井下石", "手无寸铁", "张三丰", "西红柿", "泣不成声", "公鸡打鸣", "斗地主", "锦上添花", "白领", "扇子",
+          "秃顶", "自行车", "窈窕淑女", "洗衣粉", "甘蔗", "日光灯", "守门员", "乐不思蜀", "喜怒无常", "黄道吉日",
+          "狐朋狗友", "谢天谢地", "一箭双雕", "母亲", "针筒", "鸡毛蒜皮", "棉花", "嬉皮笑脸", "害羞", "水果刀",
+          "蜜蜂", "垂头丧气", "笨鸟先飞", "争先恐后", "假货", "一休哥", "蛇", "犀牛", "雪莲果", "火龙果",
+          "黄菜", "包姜", "五十步笑百步", "画蛇添足", "话筒", "少先队员", "三明治", "菠萝", "指鹿为马", "虾兵蟹将",
+          "足球", "灰太狼", "牛肉面", "水球", "环保", "奶牛", "驴", "升旗", "话中有话", "猫头鹰",
+          "比赛", "犀利哥", "绿茶", "长吁短叹", "野猪", "铁石心肠", "心有灵犀一点通", "自作主张", "斑马", "一鸣惊人",
+          "杨贵妃", "张牙舞爪", "孟母三迁", "东张西望", "青梅竹马", "床", "京剧", "吹毛求疵", "三长二短", "小鸡",
+          "插排", "ufo", "墨镜", "泰山", "汤勺", "轮船", "超市", "虎头蛇尾", "七上八下", "双面胶",
+          "电热毯", "一言九鼎", "撒腿就跑", "李小龙", "烤红薯", "蓝牙", "灰姑娘", "汤姆", "山竹", "榴莲"
+        ],
+        [
+          "百香果", "果干", "覆盆子", "青提", "四大美女", "千山万水", "摇头摆尾", "魔术", "音响", "旧台历",
+          "烟斗", "唱歌", "田东", "花仙子", "友谊关", "花朵", "监狱", "星星", "眼高手低", "电闪雷鸣",
+          "一路顺风", "元旦", "红领巾", "情不自禁", "黄鼠狼给鸡拜年", "下雪", "桂林", "凤姐", "尖嘴猴腮", "电饭锅",
+          "知足常乐", "卧虎藏龙", "空气清新剂", "唐山", "卧薪尝胆", "腰带", "语文书", "金鱼", "贾宝玉", "我爱你",
+          "鹤立鸡群", "花好月圆", "狗血淋头", "东倒西歪", "开关", "抱头痛哭", "蛋炒饭", "来历不明", "狐假虎威", "感激涕零",
+          "手机", "护身符", "雨伞", "司马光", "一举两得", "白鸽", "暗送秋波", "圣斗士星矢", "鞭炮", "猩猩",
+          "至尊宝", "猎鹰", "存折", "顿海英", "萤火虫", "驯鹿", "橙", "桂圆", "无花果", "鳄梨",
+          "椰子", "豌豆米", "端午节", "电话", "张国荣", "射击", "酸辣粉", "嚎啕大哭", "见钱眼开", "美女",
+          "NBA", "风筝", "老虎", "放虎归山", "坐山观虎斗", "风风火火", "眉飞色舞", "单杠", "目不转睛", "快马加鞭",
+          "河蟹", "宋丹丹", "神气十足", "青年节", "三头六臂", "井底之蛙", "抽烟", "唯我独尊", "核桃", "拔草寻蛇"
+        ],
+        [
+          "扬眉吐气", "蜡笔", "油条", "剪指甲", "芭蕾舞", "遛狗", "牛鬼蛇神", "琵琶", "沙枣", "跳棋",
+          "头破血流", "鼠目寸光", "虎背熊腰", "八卦", "为虎添翼", "十全十美", "狼吞虎咽", "害群之马", "老鼠", "吃田螺",
+          "酸", "剃头", "妇女节", "开车", "头痛", "八仙过海", "豆沙包", "殊途同归", "电视机", "抓耳挠腮",
+          "痛哭流涕", "电风扇", "郭靖", "龙潭虎穴", "小沈阳", "摩托车", "书包", "舞蹈", "帅哥", "跳舞",
+          "海象", "淘宝", "西瓜", "灭火器", "二郎神", "丹顶鹤", "人声鼎沸", "黑丝", "燕子", "婚车",
+          "翠鸟", "草莓", "番石榴", "银杏", "乌梅", "莲雾", "饼干", "梳妆台", "谋女郎", "小鸟依人",
+          "吃货", "海枯石烂", "假惺惺", "口头禅", "方便面", "龙盘虎踞", "钳子", "馄饨", "西湖", "蜡烛",
+          "冯巩", "布达拉宫", "桃花", "刘欢", "削皮器", "皮笑肉不笑", "恐龙", "蜗牛", "除草剂", "吸尘器",
+          "温度计", "鸡鸣狗盗", "两小无猜", "落叶归根", "天伦之乐", "五体投地", "盲人摸象", "罄竹难书", "奥运", "药到病除"
+        ],
+        [
+          "虎", "窈窕淑女", "打草惊蛇", "抱头鼠窜", "纽扣", "青蛙", "袋鼠", "娃哈哈", "KTV", "黄道吉日",
+          "医生", "晴天霹雳", "疯子", "挤眉弄眼", "放虎归山", "千钧一发", "盲人摸象", "针筒", "落地灯", "三顾茅庐",
+          "鬼哭狼嚎", "飞檐走壁", "空格键", "刘翔", "上京赶考", "水笼头", "吃货", "隐形眼镜", "椰子", "火山爆发",
+          "和尚", "跳水", "惊弓之鸟", "龙飞凤舞", "海马", "猪", "蓝莓", "果干", "奇异果", "皮影",
+          "为虎作伥", "不三不四", "大摇大摆", "射箭", "拳击", "炖青鱼", "糯米饭", "卓别林", "老婆", "林冲",
+          "黄瓜", "吵架", "犀利哥", "元宵节", "冰箱", "乌鸦", "球拍", "鸭嘴兽", "猩猩", "机不可失",
+          "方便面", "张牙舞爪", "打麻将", "衣服", "床", "日历", "鼓", "铅笔", "无所不为", "护身符",
+          "百里挑一", "跨栏", "工资", "环保", "射击", "松鼠", "企鹅", "茶叶蛋", "谢谢", "饼干",
+          "眉开眼笑", "恍然大悟", "少先队员", "烧饼", "瑜伽", "哪吒", "七上八下", "目瞪口呆", "云收雨散", "口是心非"
+        ],
+        [
+          "白日做梦", "花花公子", "升旗", "变色龙", "二郎神", "狼吞虎咽", "国色天香", "泡沫", "画龙点睛", "嚎啕大哭",
+          "虾", "匍匐前进", "郎才女貌", "宁缺毋滥", "猪脚", "坐标", "大蒜", "黄色", "香蕉", "老鼠",
+          "小鸡", "扬子鳄", "灯笼", "教师节", "打针", "除草剂", "鲨鱼", "蜈蚣", "翠鸟", "辛巴",
+          "葫芦七兄弟", "铁扇公主", "兔八哥", "葡萄柚", "柠檬", "月饼", "许仙", "冰淇淋", "小鸟依人", "电脑",
+          "魔术", "恐龙", "三蛇七鼠", "抓耳挠腮", "锦旗", "锄头", "陈佩斯", "螃蟹", "燕子", "老爷车",
+          "卧虎藏龙", "周瑜", "睚眦必报", "指手画脚", "西山", "相濡以沫", "天下无双", "百度", "围魏救赵", "蜡烛",
+          "李小龙", "遛狗", "烟斗", "NBA", "愚公移山", "鬼迷心窍", "对牛弹琴", "朝三暮四", "太极", "歌",
+          "前仰后合", "词不达意", "背水一战", "海市蜃楼", "妈妈", "书", "卷纸", "空气", "屏风", "古筝",
+          "水母", "罗汉果", "脐橙", "黄金梨", "白豆干", "占座", "游泳", "兔子", "象棋", "下马威"
+        ],
+        [
+          "狐狸", "腰带", "洗衣粉", "鲜花", "凤姐", "回光返照", "命中注定", "流星", "情不自禁", "电风扇",
+          "两面三刀", "天等", "含情脉脉", "见钱眼开", "蛋炒饭", "馒头", "白展堂", "牛肉干", "作茧自缚", "篮球",
+          "超市", "蛋糕", "八卦", "王者荣耀", "刮胡刀", "回头是岸", "薯条", "喜感", "打酱油", "地球仪",
+          "烤红薯", "实验室", "狮子", "鹅", "猛犸象", "藏獒", "美人鱼", "美人瓜", "哈密瓜", "油麦菜",
+          "玉米粒", "园茄", "鹤立鸡群", "电闪雷鸣", "台灯", "羽毛球", "人人喊打", "柔道", "从容不迫", "守株待兔",
+          "长吁短叹", "一五一十", "高粱", "刻舟求剑", "回眸一笑", "兴高采烈", "纸杯", "欢乐谷", "洋洋得意", "鸡鸣狗盗",
+          "芋头", "鸟语花香", "手术刀", "捧腹大笑", "蹑手蹑脚", "旷工", "电烫斗", "鹰钩鼻", "捣蛋", "松鼠猴",
+          "刘罗锅", "国王", "水波", "面粉", "网球", "独一无二", "小品", "一笑倾城", "先礼后兵", "天长地久",
+          "金鸡独立", "酸甜苦辣", "打印机", "山楂", "索尼", "公鸡打鸣", "石榴", "发冷", "喷香水", "潜规则"
+        ],
+        [
+          "刀", "桃", "菠菜", "东山再起", "游泳", "油条", "奥巴马", "狗熊", "IC卡", "蟋蟀",
+          "鹦鹉", "画龙点睛", "围棋", "三长二短", "斗鸡走狗", "刺猬", "水煮鱼", "教师", "大器晚成", "棒打鸳鸯",
+          "赵子龙", "偷天换日", "饮鸩止渴", "头破血流", "李宁", "名字", "狮子座", "狗血淋头", "莺莺燕燕", "兵荒马乱",
+          "仓库", "漩涡", "暖水瓶", "长颈鹿", "倭黑猩猩", "覆盆子", "黄豆芽", "赵本山", "鸡飞狗跳", "爆米花",
+          "护膝", "跳绳", "牛奶糖", "以德服人", "拾金不昧", "勇往直前", "冰清玉洁", "倾国倾城", "棉花糖", "漩涡",
+          "围裙", "酸菜鱼", "拔刀相助", "霸王洗发水", "杨桃", "乌梅", "档案袋", "蝙蝠", "哭闹", "春节",
+          "大猩猩", "扭秧歌", "羊入虎口", "眉开眼笑", "眼镜", "火锅", "空调", "水饺", "沙拉酱", "母亲",
+          "乘龙快婿", "忍无可忍", "锄头", "皮鞋", "茶叶", "三头六臂", "一分为二", "芝麻", "小偷", "小霸王",
+          "B超", "果子狸", "五马分尸", "击剑", "绵羊", "木耳", "悄悄话", "黄道吉日", "英雄本色", "来历不明"
+        ],
+        [
+          "死不瞑目", "小熊猫", "话中有话", "暗箭伤人", "扬眉吐气", "洗衣机", "洋葱", "夜晚", "飞碟", "孙悟空",
+          "井底之蛙", "飞机", "灭绝师太", "雷震子", "兴高采烈", "赤壁", "海豚", "啄木鸟", "梨", "以牙还牙",
+          "月饼", "狗急跳墙", "张国荣", "一休哥", "猫头鹰", "围裙", "狗拿耗子", "南瓜", "玉米", "沐浴露",
+          "落地灯", "打雷", "照镜子", "哈哈大笑", "东北虎", "花言巧语", "贾宝玉", "李云龙", "走马观花", "铁路",
+          "一毛不拔", "象棋", "坐井观天", "喜怒无常", "椰子", "书包", "破釜沉舟", "争分夺秒", "餐巾纸", "乌龟",
+          "礼服", "跳棋", "心花怒放", "猪八戒", "展昭", "水牛", "新生儿", "方特", "排插", "水母",
+          "蟋蟀", "罐头", "黑布林", "白果", "李子", "天寒地冻", "开门", "军棋", "藕断丝连", "斤斤计较",
+          "兔死狐悲", "鸡蛋", "暗恋", "五体投地", "形影不离", "捧场", "否极泰来", "炒菜", "田螺", "打嗝",
+          "奶瓶", "护肤品", "美女", "张牙舞爪", "悬梁刺股", "鱼岛", "狼心狗肺", "击剑", "苹果", "大头鱼"
+        ]
+];
+
+    // 当前组和当前索引
+    let currentGroupIndex = 0;
+    let currentIndex = 0;
+
+    // 动态生成幻灯片
+    const slidesContainer = document.body;
+
+    // 更新组别指示器
+    function updateGroupIndicator() {
+        const groupIndicator = document.querySelector('.group-indicator');
+        groupIndicator.textContent = `组别 ${currentGroupIndex + 1}`;
+    }
+
+    // 初始化页面
+    function init() {
+        // 清空旧内容
+        document.querySelectorAll('.slide').forEach(slide => slide.remove());
+
+        // 渲染当前组的幻灯片
+        const texts = textGroups[currentGroupIndex];
+        texts.forEach((text, index) => {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            if (index === 0) slide.classList.add('active'); // 第一个文字默认显示
+            slide.textContent = text;
+
+            // 根据文字长度动态调整字体大小
+            const fontSize = calculateFontSize(text);
+            slide.style.fontSize = fontSize + 'vw'; // 使用相对单位 vw
+            slidesContainer.appendChild(slide);
+        });
+
+        // 更新组别指示器
+        updateGroupIndicator();
+
+        // 重置当前索引
+        currentIndex = 0;
+        showSlide(currentIndex);
+    }
+
+    // 计算字体大小的函数
+    function calculateFontSize(text) {
+        const baseSize = 10; // 基础字体大小 (10vw)
+        const maxLength = 20; // 假设超过 20 个字符时字体最小
+        const textLength = text.length;
+
+        // 根据文字长度调整字体大小
+        if (textLength <= 5) {
+            return baseSize * 2; // 字数少于等于 5，字体放大 2 倍
+        } else if (textLength <= maxLength) {
+            return baseSize * (1 + (maxLength - textLength) / maxLength); // 字数在 6-20 之间，字体逐渐变小
+        } else {
+            return baseSize * 0.5; // 字数超过 20，字体减小到 50%
+        }
+    }
+
+    // 获取所有生成的幻灯片
+    function getSlides() {
+        return document.querySelectorAll('.slide');
+    }
+
+    // 显示当前幻灯片
+    function showSlide(index) {
+        const slides = getSlides();
+        slides.forEach((slide, i) => {
+            slide.classList.remove('active');
+            if (i === index) {
+                slide.classList.add('active');
+            }
+        });
+    }
+
+    // 下一页
+    function nextSlide() {
+        const slides = getSlides();
+        currentIndex = (currentIndex + 1) % slides.length;
+        showSlide(currentIndex);
+    }
+
+    // 上一页
+    function prevSlide() {
+        const slides = getSlides();
+        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+        showSlide(currentIndex);
+    }
+
+    // 切换到下一组
+    function nextGroup() {
+        currentGroupIndex = (currentGroupIndex + 1) % textGroups.length;
+        init(); // 重新初始化页面
+    }
+
+    // 切换到上一组
+    function prevGroup() {
+        currentGroupIndex = (currentGroupIndex - 1 + textGroups.length) % textGroups.length;
+        init(); // 重新初始化页面
+    }
+
+    // 按钮点击事件
+    document.querySelector('.next').addEventListener('click', nextSlide);
+    document.querySelector('.prev').addEventListener('click', prevSlide);
+    document.querySelector('.group-next').addEventListener('click', nextGroup);
+    document.querySelector('.group-prev').addEventListener('click', prevGroup);
+
+    // 鼠标滚轮切换事件
+    document.addEventListener('wheel', (event) => {
+        if (event.deltaY > 0) {
+            nextSlide();
+        } else {
+            prevSlide();
+        }
+    });
+
+    // 触摸事件变量
+    let startX = 0;
+    let endX = 0;
+
+    // 监听触摸开始
+    document.addEventListener('touchstart', (event) => {
+        startX = event.touches[0].clientX; // 记录触摸起始点
+    });
+
+    // 监听触摸结束
+    document.addEventListener('touchend', (event) => {
+        endX = event.changedTouches[0].clientX; // 记录触摸结束点
+        handleSwipe(); // 处理滑动
+    });
+
+    // 处理滑动方向
+    function handleSwipe() {
+        const diffX = endX - startX;
+        if (Math.abs(diffX) > 50) { // 判断滑动距离是否足够
+            if (diffX > 0) {
+                prevSlide(); // 向右滑动，上一页
+            } else {
+                nextSlide(); // 向左滑动，下一页
+            }
+        }
+    }
+
+    // 初始化第一组
+    init();
+</script>
+
+</body>
+</html>
